@@ -1,7 +1,7 @@
 package com.examcraft.portal;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
@@ -23,7 +23,7 @@ import android.widget.Button;
 import android.graphics.Color;
 import android.view.Gravity;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
     private static final String APP_URL = "https://web-production-337d1.up.railway.app/ExamCraft_Portal.html";
 
