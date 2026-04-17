@@ -19,15 +19,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+      - name: Install Gradle 8.0 directly
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.0-bin.zip -O gradle.zip
+          unzip -q gradle.zip -d /opt/gradle
+          echo "/opt/gradle/gradle-8.0/bin" >> $GITHUB_PATH
 
       - name: Install Android SDK
         run: |
-          sudo apt-get install -y wget unzip
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
           mkdir -p $HOME/android-sdk/cmdline-tools
           unzip -q cmdtools.zip -d $HOME/android-sdk/cmdline-tools
@@ -42,16 +41,13 @@ jobs:
           yes | sdkmanager --licenses || true
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-      - name: Generate Gradle Wrapper
+      - name: Generate Gradle Wrapper using Gradle 8.0
         run: |
-          cd $GITHUB_WORKSPACE
-          gradle wrapper --gradle-version 8.0
+          gradle wrapper --gradle-version 8.0 --distribution-type bin
           chmod +x gradlew
 
       - name: Build Debug APK
-        run: |
-          cd $GITHUB_WORKSPACE
-          ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
