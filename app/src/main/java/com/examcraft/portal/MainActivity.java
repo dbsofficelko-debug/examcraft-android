@@ -1,68 +1,70 @@
 package com.examcraft.portal;
 
-import android.annotation.SuppressLint;
 import androidx.appcompat.app.AppCompatActivity;
+import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Button;
-import android.graphics.Color;
-import android.view.Gravity;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String APP_URL = "https://web-production-337d1.up.railway.app/ExamCraft_Portal.html";
+    private static final String APP_URL =
+            "https://web-production-337d1.up.railway.app/ExamCraft_Portal.html";
 
-    private WebView webView;
-    private ProgressBar progressBar;
+    private static final int FILE_CHOOSER_REQUEST = 1001;
+
+    private WebView      webView;
+    private ProgressBar  progressBar;
     private LinearLayout errorLayout;
+    private ValueCallback<Uri[]> filePathCallback;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // ── Root layout ───────────────────────────────────────────────────
         FrameLayout root = new FrameLayout(this);
         root.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT));
-        root.setBackgroundColor(Color.parseColor("#1e1b4b"));  // violet-950
+        root.setBackgroundColor(Color.parseColor("#1e1b4b"));
 
-        // ── WebView ───────────────────────────────────────────────────────
         webView = new WebView(this);
         webView.setLayoutParams(new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT));
         webView.setBackgroundColor(Color.parseColor("#1e1b4b"));
 
-        // ── Progress bar ──────────────────────────────────────────────────
-        progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progressBar = new ProgressBar(
+                this, null, android.R.attr.progressBarStyleHorizontal);
         FrameLayout.LayoutParams pbParams = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, 8);
         pbParams.gravity = Gravity.TOP;
         progressBar.setLayoutParams(pbParams);
         progressBar.setMax(100);
         progressBar.setProgressTintList(
-                android.content.res.ColorStateList.valueOf(Color.parseColor("#7c3aed")));
-        progressBar.setProgressBackgroundTintList(
-                android.content.res.ColorStateList.valueOf(Color.TRANSPARENT));
+                android.content.res.ColorStateList.valueOf(
+                        Color.parseColor("#7c3aed")));
 
-        // ── Error / No-Internet layout ────────────────────────────────────
         errorLayout = new LinearLayout(this);
         errorLayout.setOrientation(LinearLayout.VERTICAL);
         errorLayout.setGravity(Gravity.CENTER);
@@ -84,8 +86,8 @@ public class MainActivity extends AppCompatActivity {
         title.setPadding(0, 24, 0, 12);
 
         TextView sub = new TextView(this);
-        sub.setText("ExamCraft needs an internet connection to work.\nPlease check your WiFi or mobile data and try again.");
-        sub.setTextColor(Color.parseColor("#a5b4fc"));  // indigo-300
+        sub.setText("ExamCraft needs an internet connection.\nPlease check your data or WiFi and try again.");
+        sub.setTextColor(Color.parseColor("#a5b4fc"));
         sub.setTextSize(14);
         sub.setGravity(Gravity.CENTER);
         sub.setPadding(0, 0, 0, 32);
@@ -102,40 +104,35 @@ public class MainActivity extends AppCompatActivity {
         errorLayout.addView(sub);
         errorLayout.addView(retryBtn);
 
-        // ── Add views to root ─────────────────────────────────────────────
         root.addView(webView);
         root.addView(progressBar);
         root.addView(errorLayout);
         setContentView(root);
 
-        // ── WebView settings ──────────────────────────────────────────────
-        WebSettings settings = webView.getSettings();
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setDatabaseEnabled(true);
-        settings.setLoadWithOverviewMode(true);
-        settings.setUseWideViewPort(true);
-        settings.setBuiltInZoomControls(false);
-        settings.setDisplayZoomControls(false);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-        settings.setAllowFileAccess(true);
-        settings.setMediaPlaybackRequiresUserGesture(false);
+        WebSettings s = webView.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);
+        s.setDatabaseEnabled(true);
+        s.setLoadWithOverviewMode(true);
+        s.setUseWideViewPort(true);
+        s.setBuiltInZoomControls(false);
+        s.setDisplayZoomControls(false);
+        s.setCacheMode(WebSettings.LOAD_DEFAULT);
+        s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        s.setAllowFileAccess(true);
+        s.setAllowContentAccess(true);
+        s.setMediaPlaybackRequiresUserGesture(false);
 
-        // ── WebViewClient ─────────────────────────────────────────────────
         webView.setWebViewClient(new WebViewClient() {
             @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+            public boolean shouldOverrideUrlLoading(
+                    WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
-                // Open external links in browser, keep app links in WebView
                 if (url.startsWith("https://web-production-337d1.up.railway.app")) {
                     return false;
                 }
-                if (url.startsWith("http") || url.startsWith("https")) {
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-                    return true;
-                }
-                return false;
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                return true;
             }
 
             @Override
@@ -161,8 +158,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // ── WebChromeClient (progress) ────────────────────────────────────
         webView.setWebChromeClient(new WebChromeClient() {
+
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
                 progressBar.setProgress(newProgress);
@@ -170,10 +167,57 @@ public class MainActivity extends AppCompatActivity {
                     progressBar.setVisibility(View.GONE);
                 }
             }
+
+            @Override
+            public boolean onShowFileChooser(
+                    WebView webView,
+                    ValueCallback<Uri[]> filePathCallback,
+                    FileChooserParams fileChooserParams) {
+
+                if (MainActivity.this.filePathCallback != null) {
+                    MainActivity.this.filePathCallback.onReceiveValue(null);
+                    MainActivity.this.filePathCallback = null;
+                }
+
+                MainActivity.this.filePathCallback = filePathCallback;
+
+                Intent contentIntent = new Intent(Intent.ACTION_GET_CONTENT);
+                contentIntent.addCategory(Intent.CATEGORY_OPENABLE);
+                contentIntent.setType("application/pdf");
+
+                Intent chooserIntent = Intent.createChooser(
+                        contentIntent, "Select PDF File");
+
+                try {
+                    startActivityForResult(chooserIntent, FILE_CHOOSER_REQUEST);
+                } catch (Exception e) {
+                    MainActivity.this.filePathCallback = null;
+                    return false;
+                }
+                return true;
+            }
         });
 
-        // ── Load the app ──────────────────────────────────────────────────
         loadApp();
+    }
+
+    @Override
+    protected void onActivityResult(
+            int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == FILE_CHOOSER_REQUEST) {
+            if (filePathCallback == null) return;
+            Uri[] results = null;
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                Uri dataUri = data.getData();
+                if (dataUri != null) {
+                    results = new Uri[]{ dataUri };
+                }
+            }
+            filePathCallback.onReceiveValue(results);
+            filePathCallback = null;
+        }
     }
 
     private void loadApp() {
@@ -189,8 +233,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isConnected() {
-        ConnectivityManager cm = (ConnectivityManager)
-                getSystemService(CONNECTIVITY_SERVICE);
+        ConnectivityManager cm =
+                (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         if (cm == null) return false;
         NetworkInfo info = cm.getActiveNetworkInfo();
         return info != null && info.isConnected();
@@ -205,23 +249,7 @@ public class MainActivity extends AppCompatActivity {
         return super.onKeyDown(keyCode, event);
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        webView.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        webView.onPause();
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (webView != null) {
-            webView.destroy();
-        }
-        super.onDestroy();
-    }
+    @Override protected void onResume()  { super.onResume();  webView.onResume();  }
+    @Override protected void onPause()   { super.onPause();   webView.onPause();   }
+    @Override protected void onDestroy() { if (webView != null) webView.destroy(); super.onDestroy(); }
 }
